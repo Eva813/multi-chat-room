@@ -43,11 +43,17 @@ export function MessageInteractive({
 
   return (
     <>
-      <div className="relative group">
+      <div className="relative group/message">
         {children}
 
         {messageId && (
-          <div className="absolute -right-2 top-1/2 -translate-y-1/2 translate-x-full flex gap-1 bg-white dark:bg-gray-800 rounded-full px-2 py-1 shadow-md border border-gray-200 dark:border-gray-700 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none group-hover:pointer-events-auto">
+          <div className={cn(
+            'absolute top-1/2 -translate-y-1/2 flex gap-1 bg-white dark:bg-gray-800 rounded-full px-2 py-1 shadow-md border border-gray-200 dark:border-gray-700 z-10',
+            'opacity-0 group-hover/message:opacity-100 hover:opacity-100 transition-opacity',
+            isOwn
+              ? '-left-2 -translate-x-full' // 自己的訊息，按鈕在左側
+              : '-right-2 translate-x-full'  // 他人的訊息，按鈕在右側
+          )}>
             {REACTION_TYPES.map((type) => (
               <button
                 key={type}
@@ -63,7 +69,6 @@ export function MessageInteractive({
         )}
       </div>
 
-      {/* Reaction 計數顯示 */}
       {hasReactions && (
         <div className={cn(
           'flex gap-2 mt-1 text-sm',
