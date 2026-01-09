@@ -30,7 +30,7 @@ export function ChatLayout({ sidebar, children }: ChatLayoutProps) {
 
       {/* 主要聊天區域 */}
       <main className="flex flex-1 flex-col overflow-hidden">
-
+        {/* 手機版導覽列 */}
         <header className="flex items-center gap-3 border-b border-border px-4 py-3 md:hidden">
           <Button
             variant="ghost"
@@ -43,7 +43,8 @@ export function ChatLayout({ sidebar, children }: ChatLayoutProps) {
           <h1 className="text-lg font-semibold">Chat Room</h1>
         </header>
 
-
+        {/* 聊天內容 */}
+        {children}
       </main>
     </div>
   )
