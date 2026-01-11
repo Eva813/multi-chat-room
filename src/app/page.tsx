@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { ChatLayout } from '@/components/layout/ChatLayout'
 import { Sidebar } from '@/components/sidebar/Sidebar'
 import { ChatWindow } from '@/components/chat/ChatWindow'
+import { Skeleton } from '@/components/ui/skeleton'
 import { Conversation, Message } from '@/lib/types'
 import { getConversations, getMessages, createMessage } from '@/apis/conversation'
 
@@ -20,6 +21,9 @@ export default function Home() {
   const [selectedConversationId, setSelectedConversationId] = useState<number>(1)
   const [currentUserId] = useState<number>(CURRENT_USER.userId)
   const [loading, setLoading] = useState(true)
+  const [isMessagesLoading, setIsMessagesLoading] = useState(false)
+  const [isSending, setIsSending] = useState(false)
+  const [sendError, setSendError] = useState<string | undefined>()
 
   // 載入對話列表
   useEffect(() => {
@@ -44,10 +48,13 @@ export default function Home() {
 
     const loadMessages = async () => {
       try {
+        setIsMessagesLoading(true)
         const data = await getMessages(selectedConversationId)
         setMessages(data)
       } catch (error) {
         console.error('❌ 載入訊息失敗:', error)
+      } finally {
+        setIsMessagesLoading(false)
       }
     }
 
@@ -61,6 +68,9 @@ export default function Home() {
   const handleSendMessage = useCallback(
     async (content: string) => {
       if (!content.trim()) return
+
+      setSendError(undefined)
+      setIsSending(true)
 
       try {
         // 使用 API 建立新訊息
@@ -90,7 +100,11 @@ export default function Home() {
           )
         )
       } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : '傳送訊息失敗，請稍後重試'
         console.error('❌ 傳送訊息失敗:', error)
+        setSendError(errorMessage)
+      } finally {
+        setIsSending(false)
       }
     },
     [selectedConversationId]
@@ -99,12 +113,45 @@ export default function Home() {
 
   if (loading && conversations.length === 0) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-center">
-          <div className="text-lg font-medium">載入中...</div>
-          <div className="text-sm text-gray-500 mt-2">正在取得對話列表</div>
+      <ChatLayout
+        sidebar={
+          <div className="flex h-full w-full flex-col bg-background">
+            {/* Header Skeleton */}
+            <div className="border-b border-border px-6 py-4">
+              <Skeleton className="h-9 w-full" />
+            </div>
+            <div className="flex-1 overflow-hidden p-2 space-y-1">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <div key={i} className="flex items-center gap-3 p-3">
+                  <Skeleton className="h-12 w-12 rounded-full" />
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-4 w-1/3" />
+                    <Skeleton className="h-3 w-3/4" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        }
+      >
+        <div className="flex h-full flex-col">
+          {/* Chat Header Skeleton */}
+          <div className="border-b border-border px-6 py-4">
+            <Skeleton className="h-9 w-48" />
+          </div>
+
+          {/* Message List Skeleton */}
+          <div className="flex-1 bg-gray-50 dark:bg-gray-900 px-6 py-4 space-y-6">
+            <div className="flex items-start gap-3">
+              <Skeleton className="h-8 w-8 rounded-full" />
+              <div className="space-y-1">
+                <Skeleton className="h-4 w-16" />
+                <Skeleton className="h-10 w-64 rounded-lg" />
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
+      </ChatLayout>
     )
   }
 
@@ -124,6 +171,10 @@ export default function Home() {
         messages={messages}
         currentUserId={currentUserId}
         onSendMessage={handleSendMessage}
+        isLoading={isMessagesLoading}
+        isSending={isSending}
+        sendError={sendError}
+        onClearSendError={() => setSendError(undefined)}
       />
     </ChatLayout>
   )

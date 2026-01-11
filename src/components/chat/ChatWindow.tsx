@@ -1,15 +1,42 @@
 'use client'
 
+import { useMemo } from 'react'
 import { MessageList } from './MessageList'
 import { MessageInput } from './MessageInput'
 import { Conversation, Message } from '@/lib/types'
+import { Skeleton } from '@/components/ui/skeleton'
 
 interface ChatWindowProps {
   selectedConversationId: number
   conversations: Conversation[]
   messages: Message[]
   currentUserId: number
-  onSendMessage: (message: string) => void
+  onSendMessage: (message: string) => Promise<void>
+  isLoading?: boolean
+  isSending?: boolean
+  sendError?: string
+  onClearSendError?: () => void
+}
+
+function MessageListSkeleton() {
+  return (
+    <div className="flex-1 bg-gray-50 dark:bg-gray-900 px-6 py-4 space-y-6">
+      <div className="flex items-start gap-3">
+        <Skeleton className="h-8 w-8 rounded-full" />
+        <div className="space-y-1">
+          <Skeleton className="h-4 w-16" />
+          <Skeleton className="h-10 w-64 rounded-lg" />
+        </div>
+      </div>
+      <div className="flex items-start gap-3">
+        <Skeleton className="h-8 w-8 rounded-full" />
+        <div className="space-y-1">
+          <Skeleton className="h-4 w-16" />
+          <Skeleton className="h-20 w-72 rounded-lg" />
+        </div>
+      </div>
+    </div>
+  )
 }
 
 export function ChatWindow({
@@ -18,14 +45,20 @@ export function ChatWindow({
   messages,
   currentUserId,
   onSendMessage,
+  isLoading = false,
+  isSending = false,
+  sendError,
+  onClearSendError,
 }: ChatWindowProps) {
-  const selectedConversation = conversations.find(
-    (conversation) => conversation.id === selectedConversationId
-  )
 
-  const conversationName = selectedConversation?.participants
-    .map((participant) => participant.user)
-    .join(', ')
+  const conversationName = useMemo(() => {
+    const selectedConversation = conversations.find(
+      (conversation) => conversation.id === selectedConversationId
+    )
+    return selectedConversation?.participants
+      .map((participant) => participant.user)
+      .join(', ')
+  }, [conversations, selectedConversationId])
 
   return (
     <div className="flex h-full flex-col">
@@ -35,13 +68,22 @@ export function ChatWindow({
         </h1>
       </header>
 
-      <MessageList
-        messages={messages}
-        conversationId={selectedConversationId}
-        currentUserId={currentUserId}
-      />
+      {isLoading ? (
+        <MessageListSkeleton />
+      ) : (
+        <MessageList
+          messages={messages}
+          conversationId={selectedConversationId}
+          currentUserId={currentUserId}
+        />
+      )}
 
-      <MessageInput onSendMessage={onSendMessage} />
+      <MessageInput
+        onSendMessage={onSendMessage}
+        isSending={isSending}
+        error={sendError}
+        onClearError={onClearSendError}
+      />
     </div>
   )
 }
