@@ -136,8 +136,8 @@ export function ConversationItem({
       onClick={onClick}
       className={cn(
         'flex w-full items-start gap-3 rounded-lg p-3 text-left transition-colors',
-        'hover:bg-accent/60',
-        isActive && 'bg-primary/10 border-l-2 border-primary'
+        'hover:bg-accent hover:shadow-sm',
+        isActive && 'bg-primary/15 border-l-4 border-primary shadow-sm'
       )}
     >
       <AvatarGroup avatars={avatars} names={names} />
