@@ -8,6 +8,50 @@ import { Message } from '@/lib/types'
 
 const SCROLL_THRESHOLD = 100
 
+type ScrollAction =
+  | { type: 'initial'; smooth: false }
+  | { type: 'switch-conversation'; smooth: false }
+  | { type: 'new-message'; smooth: true }
+  | { type: 'sticky-bottom'; smooth: false }
+  | { type: 'none' }
+
+function determineScrollAction(
+  lastMessage: Message | undefined,
+  previousMessageId: string | null,
+  conversationId: number,
+  currentUserId: number,
+  isNearBottom: boolean
+): ScrollAction {
+  if (!lastMessage) return { type: 'none' }
+
+  const currentMessageId = `${conversationId}-${lastMessage.timestamp}`
+
+  if (!previousMessageId) {
+    return { type: 'initial', smooth: false }
+  }
+
+  const previousConversationId = previousMessageId.split('-')[0]
+  const isSwitchingConversation = previousConversationId !== String(conversationId)
+  const isNewMessage = currentMessageId !== previousMessageId
+
+  if (isSwitchingConversation) {
+    return { type: 'switch-conversation', smooth: false }
+  }
+
+  if (isNewMessage) {
+    const isMyMessage = lastMessage.userId === currentUserId
+    if (isMyMessage || isNearBottom) {
+      return { type: 'new-message', smooth: true }
+    }
+  }
+
+  if (isNearBottom) {
+    return { type: 'sticky-bottom', smooth: false }
+  }
+
+  return { type: 'none' }
+}
+
 interface MessageListProps {
   messages: Message[]
   conversationId: number
@@ -21,6 +65,7 @@ export function MessageList({
 }: MessageListProps) {
   const scrollViewportRef = useRef<HTMLDivElement>(null)
   const scrollRAFRef = useRef<number | null>(null)
+  const lastMessageRef = useRef<string | null>(null)
   const [isNearBottom, setIsNearBottom] = useState(true)
   const [showScrollButton, setShowScrollButton] = useState(false)
 
@@ -86,7 +131,6 @@ export function MessageList({
 
     return () => {
       viewport.removeEventListener('scroll', handleScroll)
-      // 清理未完成的 RAF
       if (scrollRAFRef.current !== null) {
         cancelAnimationFrame(scrollRAFRef.current)
         scrollRAFRef.current = null
@@ -95,10 +139,24 @@ export function MessageList({
   }, [])
 
   useEffect(() => {
-    if (isNearBottom && scrollViewportRef.current) {
-      scrollToBottom(false)
+    const lastMessage = conversationMessages[conversationMessages.length - 1]
+
+    const action = determineScrollAction(
+      lastMessage,
+      lastMessageRef.current,
+      conversationId,
+      currentUserId,
+      isNearBottom
+    )
+
+    if (lastMessage) {
+      lastMessageRef.current = `${conversationId}-${lastMessage.timestamp}`
     }
-  }, [conversationMessages, isNearBottom, scrollToBottom])
+
+    if (action.type !== 'none') {
+      scrollToBottom(action.smooth)
+    }
+  }, [conversationMessages, isNearBottom, scrollToBottom, conversationId, currentUserId])
 
   return (
     <div className="relative flex-1 min-h-0">
@@ -122,7 +180,6 @@ export function MessageList({
         </div>
       </ScrollArea>
 
-      {/* Scroll to Bottom 按鈕 */}
       {showScrollButton && (
         <button
           type="button"
