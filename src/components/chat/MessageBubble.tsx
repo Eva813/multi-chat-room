@@ -36,7 +36,7 @@ export const MessageBubble = React.memo(function MessageBubble({
   if (messageType === 'system') {
     return (
       <div className="flex justify-center my-2">
-        <div className="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-full text-sm text-gray-600 dark:text-gray-400 italic">
+        <div className="px-4 py-2 bg-message-system text-message-system-foreground rounded-full text-sm italic">
           {content}
         </div>
       </div>
@@ -88,8 +88,8 @@ export const MessageBubble = React.memo(function MessageBubble({
               'max-w-md rounded-2xl',
               messageType === 'image' ? 'p-1' : 'px-4 py-2.5',
               isOwn
-                ? 'bg-blue-500 text-white'
-                : 'bg-gray-200 text-gray-900 dark:bg-gray-700 dark:text-gray-100'
+                ? 'bg-message-own text-message-own-foreground'
+                : 'bg-message-other text-message-other-foreground'
             )}
           >
             {messageType === 'image' ? (

@@ -102,7 +102,7 @@ export function MessageList({
 
   return (
     <div className="relative flex-1 min-h-0">
-      <ScrollArea ref={scrollViewportRef} className="h-full bg-gray-50 dark:bg-gray-900">
+      <ScrollArea ref={scrollViewportRef} className="h-full bg-secondary">
         <div className="px-6 py-4 space-y-1">
           {messagesWithFormattedTime.map((message, index) => (
             <MessageBubble
@@ -130,16 +130,15 @@ export function MessageList({
           className="absolute bottom-4 right-4 z-10
                      flex items-center justify-center
                      w-10 h-10 rounded-full
-                     bg-white dark:bg-gray-800
+                     bg-card border-border
                      shadow-lg hover:shadow-xl
-                     border border-gray-200 dark:border-gray-700
                      transition-all duration-200
                      hover:scale-110
                      focus:outline-none focus:ring-2 focus:ring-primary/50"
           aria-label="滾動到底部"
           title="滾動到底部"
         >
-          <ArrowDown className="h-5 w-5 text-gray-600 dark:text-gray-300" />
+          <ArrowDown className="h-5 w-5 text-foreground" />
         </button>
       )}
     </div>

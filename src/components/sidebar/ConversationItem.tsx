@@ -136,15 +136,20 @@ export function ConversationItem({
       onClick={onClick}
       className={cn(
         'flex w-full items-start gap-3 rounded-lg p-3 text-left transition-colors',
-        'hover:bg-accent',
-        isActive && 'bg-accent'
+        'hover:bg-accent/60',
+        isActive && 'bg-primary/10 border-l-2 border-primary'
       )}
     >
       <AvatarGroup avatars={avatars} names={names} />
 
       <div className="flex flex-1 flex-col overflow-hidden">
         <div className="flex items-center justify-between gap-2">
-          <span className="font-semibold text-sm truncate">{name}</span>
+          <span className={cn(
+            "font-semibold text-sm truncate",
+            isActive && "text-primary"
+          )}>
+            {name}
+          </span>
           <span className="text-xs text-muted-foreground shrink-0">{timestamp}</span>
         </div>
 

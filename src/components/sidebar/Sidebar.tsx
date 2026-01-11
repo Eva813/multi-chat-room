@@ -16,8 +16,8 @@ export function Sidebar({
   onSelectConversation,
 }: SidebarProps) {
   return (
-    <div className="flex h-full w-full flex-col bg-background">
-      <div className="border-b border-border px-6 py-4 bg-background">
+    <div className="flex h-full w-full flex-col bg-secondary">
+      <div className="border-b border-border px-6 py-4 bg-secondary">
         <SearchBar />
       </div>
 

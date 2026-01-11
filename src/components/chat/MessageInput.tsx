@@ -41,7 +41,7 @@ export function MessageInput({ onSendMessage, isSending = false, error, onClearE
   return (
     <div className="border-t border-border px-6 py-4 bg-background">
       {error && (
-        <div className="mb-3 flex items-center gap-2 rounded-md bg-red-50 dark:bg-red-950 p-3 text-sm text-red-700 dark:text-red-200">
+        <div className="mb-3 flex items-center gap-2 rounded-md bg-destructive/10 border border-destructive/20 p-3 text-sm text-destructive">
           <AlertCircle className="h-4 w-4" />
           <span>{error}</span>
           <button
