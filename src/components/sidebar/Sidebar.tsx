@@ -2,6 +2,7 @@
 
 import { SearchBar } from './SearchBar'
 import { ConversationList } from './ConversationList'
+import { ThemeToggle } from '@/components/theme/ThemeToggle'
 import { Conversation } from '@/lib/types'
 
 interface SidebarProps {
@@ -18,7 +19,12 @@ export function Sidebar({
   return (
     <div className="flex h-full w-full flex-col bg-secondary">
       <div className="border-b border-border px-6 py-4 bg-secondary">
-        <SearchBar />
+        <div className="flex items-center gap-3">
+          <div className="flex-1 min-w-0">
+            <SearchBar />
+          </div>
+          <ThemeToggle />
+        </div>
       </div>
 
       <ConversationList
