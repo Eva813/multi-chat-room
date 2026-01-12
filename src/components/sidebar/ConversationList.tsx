@@ -1,5 +1,6 @@
 'use client'
 
+import { useMemo } from 'react'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { ConversationItem } from './ConversationItem'
 import { Conversation } from '@/lib/types'
@@ -15,14 +16,16 @@ export function ConversationList({
   selectedConversationId,
   onSelectConversation,
 }: ConversationListProps) {
-  // 按最新訊息時間排序（最新的在最上方）
-  const sortedConversations = [...conversations].sort((a, b) => b.timestamp - a.timestamp)
+  const sortedConversations = useMemo(
+    () => [...conversations].sort((a, b) => b.timestamp - a.timestamp),
+    [conversations]
+  )
 
   return (
     <ScrollArea className="flex-1 min-h-0">
       <div className="space-y-1 p-2">
         {sortedConversations.map((conversation) => {
-          // 構建對話名稱：其他參與者的名稱
+          // 對話名稱：其他參與者的名稱
           const conversationName = conversation.participants
             .map((p) => p.user)
             .join(', ')
