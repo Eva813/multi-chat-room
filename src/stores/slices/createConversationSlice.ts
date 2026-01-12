@@ -12,10 +12,23 @@ const initialState = {
   conversations: [],
   selectedConversationId: 1,
   isLoading: false,
+  isInitialized: false,
 }
 
 export const createConversationSlice: SliceCreator<ConversationSlice> = (set, get) => ({
   ...initialState,
+
+  initialize: async () => {
+    if (get().isInitialized) return
+
+    set({ isInitialized: true })
+    await get().loadConversations()
+
+    const selectedId = get().selectedConversationId
+    if (selectedId) {
+      await get().selectConversation(selectedId)
+    }
+  },
 
   loadConversations: async () => {
     set({ isLoading: true })
@@ -31,8 +44,14 @@ export const createConversationSlice: SliceCreator<ConversationSlice> = (set, ge
   },
 
   selectConversation: async (id: number) => {
+    const currentId = get().selectedConversationId
+    const { messages } = get()
+
+    if (currentId === id && messages.length > 0) return
+
+    const loadPromise = get().loadMessages(id)
     set({ selectedConversationId: id })
-    await get().loadMessages(id)
+    await loadPromise
   },
 
   updateConversationTimestamp: (id: number, lastMessage: string, timestamp: number) => {

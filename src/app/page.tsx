@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useCallback } from 'react'
 import { ChatLayout } from '@/components/layout/ChatLayout'
 import { Sidebar } from '@/components/sidebar/Sidebar'
 import { ChatWindow } from '@/components/chat/ChatWindow'
@@ -22,22 +22,23 @@ export default function Home() {
   // Loading 狀態
   const isLoading = useChatStore((state) => state.isLoading)
   const isMessagesLoading = useChatStore((state) => state.isMessagesLoading)
+  const isSwitchingConversation = useChatStore((state) => state.isSwitchingConversation)
   const isSending = useChatStore((state) => state.isSending)
   const sendError = useChatStore((state) => state.sendError)
 
   // 取得 actions
-  const loadConversations = useChatStore((state) => state.loadConversations)
+  const initialize = useChatStore((state) => state.initialize)
   const selectConversation = useChatStore((state) => state.selectConversation)
   const sendMessage = useChatStore((state) => state.sendMessage)
   const clearSendError = useChatStore((state) => state.clearSendError)
 
   useEffect(() => {
-    const initialize = async () => {
-      await loadConversations()
-      await selectConversation(selectedConversationId)
-    }
     initialize()
-  }, [loadConversations, selectConversation, selectedConversationId])
+  }, [initialize])
+
+  const handleSelectConversation = useCallback((id: number) => {
+    selectConversation(id)
+  }, [selectConversation])
 
   // 當前對話的訊息
   const conversationMessages = useMemo(
@@ -106,7 +107,7 @@ export default function Home() {
         <Sidebar
           conversations={conversations}
           selectedConversationId={selectedConversationId}
-          onSelectConversation={selectConversation}
+          onSelectConversation={handleSelectConversation}
         />
       }
     >
@@ -116,6 +117,7 @@ export default function Home() {
         currentUserId={CURRENT_USER.userId}
         onSendMessage={sendMessage}
         isLoading={isMessagesLoading}
+        isSwitchingConversation={isSwitchingConversation}
         isSending={isSending}
         sendError={sendError}
         onClearSendError={clearSendError}

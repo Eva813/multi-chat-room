@@ -33,8 +33,10 @@ export interface ConversationSlice {
   conversations: Conversation[]
   selectedConversationId: number
   isLoading: boolean
+  isInitialized: boolean
 
   // Actions
+  initialize: () => Promise<void>
   loadConversations: () => Promise<void>
   selectConversation: (id: number) => Promise<void>
   updateConversationTimestamp: (id: number, lastMessage: string, timestamp: number) => void
@@ -45,6 +47,7 @@ export interface MessageSlice {
   messages: Message[]
   persistedMessages: Message[]
   isMessagesLoading: boolean
+  isSwitchingConversation: boolean
   isSending: boolean
   sendError?: string
 

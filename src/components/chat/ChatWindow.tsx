@@ -11,6 +11,7 @@ interface ChatWindowProps {
   currentUserId: number
   onSendMessage: (message: string) => Promise<void>
   isLoading?: boolean
+  isSwitchingConversation?: boolean
   isSending?: boolean
   sendError?: string
   onClearSendError?: () => void
@@ -43,6 +44,7 @@ export function ChatWindow({
   currentUserId,
   onSendMessage,
   isLoading = false,
+  isSwitchingConversation = false,
   isSending = false,
   sendError,
   onClearSendError,
@@ -55,13 +57,15 @@ export function ChatWindow({
         </h1>
       </header>
 
-      {isLoading ? (
+      {(isLoading || isSwitchingConversation) ? (
         <MessageListSkeleton />
       ) : (
-        <MessageList
-          messages={messages}
-          currentUserId={currentUserId}
-        />
+        <div className="flex-1 min-h-0 flex flex-col transition-opacity duration-200">
+          <MessageList
+            messages={messages}
+            currentUserId={currentUserId}
+          />
+        </div>
       )}
 
       <MessageInput

@@ -16,6 +16,7 @@ const initialState = {
   messages: [],
   persistedMessages: [],
   isMessagesLoading: false,
+  isSwitchingConversation: false,
   isSending: false,
   sendError: undefined,
   // Reaction 相關
@@ -43,7 +44,17 @@ export const createMessageSlice: SliceCreator<MessageSlice> = (set, get) => ({
    * 載入指定對話的訊息
    */
   loadMessages: async (conversationId: number) => {
-    set({ isMessagesLoading: true })
+    const { messages } = get()
+    const hasExistingMessages = messages.length > 0
+
+    // 根據是否有現有訊息來設定不同的載入狀態
+    if (hasExistingMessages) {
+      // 有訊息時使用切換狀態，保持舊訊息可見
+      set({ isSwitchingConversation: true })
+    } else {
+      // 初次載入時使用載入狀態，顯示骨架
+      set({ isMessagesLoading: true })
+    }
 
     try {
       // 1. 從 chatData 載入固定訊息
@@ -77,7 +88,7 @@ export const createMessageSlice: SliceCreator<MessageSlice> = (set, get) => ({
     } catch (error) {
       console.error('[MessageSlice] 載入訊息失敗:', error)
     } finally {
-      set({ isMessagesLoading: false })
+      set({ isMessagesLoading: false, isSwitchingConversation: false })
     }
   },
 
