@@ -1,12 +1,11 @@
 'use client'
 
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 import { ChatLayout } from '@/components/layout/ChatLayout'
 import { Sidebar } from '@/components/sidebar/Sidebar'
 import { ChatWindow } from '@/components/chat/ChatWindow'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Conversation, Message } from '@/lib/types'
-import { getConversations, getMessages, createMessage } from '@/apis/conversation'
+import { useChatStore } from '@/stores/useChatStore'
 
 // 當前用戶（獨立於 chatData.json 中的用戶）
 const CURRENT_USER = {
@@ -16,99 +15,30 @@ const CURRENT_USER = {
 }
 
 export default function Home() {
-  const [conversations, setConversations] = useState<Conversation[]>([])
-  const [messages, setMessages] = useState<Message[]>([])
-  const [selectedConversationId, setSelectedConversationId] = useState<number>(1)
-  const [currentUserId] = useState<number>(CURRENT_USER.userId)
-  const [loading, setLoading] = useState(true)
-  const [isMessagesLoading, setIsMessagesLoading] = useState(false)
-  const [isSending, setIsSending] = useState(false)
-  const [sendError, setSendError] = useState<string | undefined>()
+  const conversations = useChatStore((state) => state.conversations)
+  const messages = useChatStore((state) => state.messages)
+  const selectedConversationId = useChatStore((state) => state.selectedConversationId)
 
-  // 載入對話列表
+  // Loading 狀態
+  const isLoading = useChatStore((state) => state.isLoading)
+  const isMessagesLoading = useChatStore((state) => state.isMessagesLoading)
+  const isSending = useChatStore((state) => state.isSending)
+  const sendError = useChatStore((state) => state.sendError)
+
+  // 取得 actions
+  const loadConversations = useChatStore((state) => state.loadConversations)
+  const selectConversation = useChatStore((state) => state.selectConversation)
+  const sendMessage = useChatStore((state) => state.sendMessage)
+  const clearSendError = useChatStore((state) => state.clearSendError)
+
+
   useEffect(() => {
-    const loadConversations = async () => {
-      try {
-        setLoading(true)
-        const data = await getConversations()
-        setConversations(data)
-      } catch (error) {
-        console.error(error)
-      } finally {
-        setLoading(false)
-      }
+    const initialize = async () => {
+      await loadConversations()
+      await selectConversation(selectedConversationId)
     }
-
-    loadConversations()
-  }, [])
-
-  // 當選擇對話時，載入訊息
-  useEffect(() => {
-    if (!selectedConversationId) return
-
-    const loadMessages = async () => {
-      try {
-        setIsMessagesLoading(true)
-        const data = await getMessages(selectedConversationId)
-        setMessages(data)
-      } catch (error) {
-        console.error('❌ 載入訊息失敗:', error)
-      } finally {
-        setIsMessagesLoading(false)
-      }
-    }
-
-    loadMessages()
-  }, [selectedConversationId])
-
-  const handleSelectConversation = useCallback((conversationId: number) => {
-    setSelectedConversationId(conversationId)
-  }, [])
-
-  const handleSendMessage = useCallback(
-    async (content: string) => {
-      if (!content.trim()) return
-
-      setSendError(undefined)
-      setIsSending(true)
-
-      try {
-        // 使用 API 建立新訊息
-        const newMessage = await createMessage(selectedConversationId, {
-          userId: CURRENT_USER.userId,
-          message: content,
-          messageType: 'text',
-          user: CURRENT_USER.user,
-          avatar: CURRENT_USER.avatar,
-        })
-
-        console.log('成功傳送訊息:', newMessage)
-
-        // 更新本地訊息列表
-        setMessages((prevMessages) => [...prevMessages, newMessage])
-
-        // 更新對話的最後訊息和時間戳記
-        setConversations((prevConversations) =>
-          prevConversations.map((conv) =>
-            conv.id === selectedConversationId
-              ? {
-                ...conv,
-                lastMessage: content,
-                timestamp: newMessage.timestamp,
-              }
-              : conv
-          )
-        )
-      } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : '傳送訊息失敗，請稍後重試'
-        console.error('❌ 傳送訊息失敗:', error)
-        setSendError(errorMessage)
-      } finally {
-        setIsSending(false)
-      }
-    },
-    [selectedConversationId]
-  )
+    initialize()
+  }, [loadConversations, selectConversation, selectedConversationId])
 
   // 預先過濾當前對話的訊息
   const conversationMessages = useMemo(
@@ -122,12 +52,12 @@ export default function Home() {
     if (!conversation) return 'Chat Room'
 
     const otherParticipants = conversation.participants.filter(
-      (p) => p.userId !== currentUserId
+      (p) => p.userId !== CURRENT_USER.userId
     )
     return otherParticipants.map((p) => p.user).join(', ') || 'Chat Room'
-  }, [selectedConversationId, conversations, currentUserId])
+  }, [selectedConversationId, conversations])
 
-  if (loading && conversations.length === 0) {
+  if (isLoading && conversations.length === 0) {
     return (
       <ChatLayout
         sidebar={
@@ -177,19 +107,19 @@ export default function Home() {
         <Sidebar
           conversations={conversations}
           selectedConversationId={selectedConversationId}
-          onSelectConversation={handleSelectConversation}
+          onSelectConversation={selectConversation}
         />
       }
     >
       <ChatWindow
         conversationName={conversationName}
         messages={conversationMessages}
-        currentUserId={currentUserId}
-        onSendMessage={handleSendMessage}
+        currentUserId={CURRENT_USER.userId}
+        onSendMessage={sendMessage}
         isLoading={isMessagesLoading}
         isSending={isSending}
         sendError={sendError}
-        onClearSendError={() => setSendError(undefined)}
+        onClearSendError={clearSendError}
       />
     </ChatLayout>
   )
