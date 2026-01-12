@@ -18,20 +18,19 @@ type ScrollAction =
 function determineScrollAction(
   lastMessage: Message | undefined,
   previousMessageId: string | null,
-  conversationId: number,
   currentUserId: number,
   isNearBottom: boolean
 ): ScrollAction {
   if (!lastMessage) return { type: 'none' }
 
-  const currentMessageId = `${conversationId}-${lastMessage.timestamp}`
+  const currentMessageId = `${lastMessage.conversationId}-${lastMessage.timestamp}`
 
   if (!previousMessageId) {
     return { type: 'initial', smooth: false }
   }
 
   const previousConversationId = previousMessageId.split('-')[0]
-  const isSwitchingConversation = previousConversationId !== String(conversationId)
+  const isSwitchingConversation = previousConversationId !== String(lastMessage.conversationId)
   const isNewMessage = currentMessageId !== previousMessageId
 
   if (isSwitchingConversation) {
@@ -54,13 +53,11 @@ function determineScrollAction(
 
 interface MessageListProps {
   messages: Message[]
-  conversationId: number
   currentUserId: number
 }
 
 export function MessageList({
   messages,
-  conversationId,
   currentUserId,
 }: MessageListProps) {
   const scrollViewportRef = useRef<HTMLDivElement>(null)
@@ -69,16 +66,10 @@ export function MessageList({
   const [isNearBottom, setIsNearBottom] = useState(true)
   const [showScrollButton, setShowScrollButton] = useState(false)
 
-  // 過濾指定對話的訊息
-  const conversationMessages = useMemo(
-    () => messages.filter((m) => m.conversationId === conversationId),
-    [messages, conversationId]
-  )
-
   // 預先整理訊息顯示所需的資料
   const messagesWithFormattedTime = useMemo(
     () =>
-      conversationMessages.map((message, index) => ({
+      messages.map((message, index) => ({
         ...message,
         formattedTime: new Date(message.timestamp).toLocaleTimeString('zh-TW', {
           hour: '2-digit',
@@ -87,9 +78,9 @@ export function MessageList({
         isOwn: message.userId === currentUserId,
         showAvatar:
           index === 0 ||
-          conversationMessages[index - 1].userId !== message.userId,
+          messages[index - 1].userId !== message.userId,
       })),
-    [conversationMessages, currentUserId]
+    [messages, currentUserId]
   )
 
   const scrollToBottom = useCallback((smooth = false) => {
@@ -139,24 +130,23 @@ export function MessageList({
   }, [])
 
   useEffect(() => {
-    const lastMessage = conversationMessages[conversationMessages.length - 1]
+    const lastMessage = messages[messages.length - 1]
 
     const action = determineScrollAction(
       lastMessage,
       lastMessageRef.current,
-      conversationId,
       currentUserId,
       isNearBottom
     )
 
     if (lastMessage) {
-      lastMessageRef.current = `${conversationId}-${lastMessage.timestamp}`
+      lastMessageRef.current = `${lastMessage.conversationId}-${lastMessage.timestamp}`
     }
 
     if (action.type !== 'none') {
       scrollToBottom(action.smooth)
     }
-  }, [conversationMessages, isNearBottom, scrollToBottom, conversationId, currentUserId])
+  }, [messages, isNearBottom, scrollToBottom, currentUserId])
 
   return (
     <div className="relative flex-1 min-h-0">

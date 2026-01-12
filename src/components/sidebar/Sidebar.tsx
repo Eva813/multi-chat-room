@@ -1,5 +1,6 @@
 'use client'
 
+import { memo } from 'react'
 import { SearchBar } from './SearchBar'
 import { ConversationList } from './ConversationList'
 import { ThemeToggle } from '@/components/theme/ThemeToggle'
@@ -11,7 +12,7 @@ interface SidebarProps {
   onSelectConversation: (conversationId: number) => void
 }
 
-export function Sidebar({
+export const Sidebar = memo(function Sidebar({
   conversations,
   selectedConversationId,
   onSelectConversation,
@@ -34,4 +35,4 @@ export function Sidebar({
       />
     </div>
   )
-}
+})

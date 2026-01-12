@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { ChatLayout } from '@/components/layout/ChatLayout'
 import { Sidebar } from '@/components/sidebar/Sidebar'
 import { ChatWindow } from '@/components/chat/ChatWindow'
@@ -82,7 +82,7 @@ export default function Home() {
           avatar: CURRENT_USER.avatar,
         })
 
-        console.log('✅ 成功傳送訊息:', newMessage)
+        console.log('成功傳送訊息:', newMessage)
 
         // 更新本地訊息列表
         setMessages((prevMessages) => [...prevMessages, newMessage])
@@ -110,6 +110,22 @@ export default function Home() {
     [selectedConversationId]
   )
 
+  // 預先過濾當前對話的訊息
+  const conversationMessages = useMemo(
+    () => messages.filter((m) => m.conversationId === selectedConversationId),
+    [messages, selectedConversationId]
+  )
+
+  // 預先計算當前對話名稱
+  const conversationName = useMemo(() => {
+    const conversation = conversations.find((c) => c.id === selectedConversationId)
+    if (!conversation) return 'Chat Room'
+
+    const otherParticipants = conversation.participants.filter(
+      (p) => p.userId !== currentUserId
+    )
+    return otherParticipants.map((p) => p.user).join(', ') || 'Chat Room'
+  }, [selectedConversationId, conversations, currentUserId])
 
   if (loading && conversations.length === 0) {
     return (
@@ -166,9 +182,8 @@ export default function Home() {
       }
     >
       <ChatWindow
-        selectedConversationId={selectedConversationId}
-        conversations={conversations}
-        messages={messages}
+        conversationName={conversationName}
+        messages={conversationMessages}
         currentUserId={currentUserId}
         onSendMessage={handleSendMessage}
         isLoading={isMessagesLoading}

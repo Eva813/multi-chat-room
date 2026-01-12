@@ -1,5 +1,6 @@
 'use client'
 
+import { memo } from 'react'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { cn } from '@/lib/utils'
 
@@ -122,7 +123,7 @@ function AvatarGroup({ avatars, names }: { avatars: string[]; names: string[] })
   )
 }
 
-export function ConversationItem({
+export const ConversationItem = memo(function ConversationItem({
   name,
   lastMessage,
   timestamp,
@@ -159,4 +160,4 @@ export function ConversationItem({
       </div>
     </button>
   )
-}
+})

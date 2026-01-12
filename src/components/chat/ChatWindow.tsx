@@ -1,14 +1,12 @@
 'use client'
 
-import { useMemo } from 'react'
 import { MessageList } from './MessageList'
 import { MessageInput } from './MessageInput'
-import { Conversation, Message } from '@/lib/types'
+import { Message } from '@/lib/types'
 import { Skeleton } from '@/components/ui/skeleton'
 
 interface ChatWindowProps {
-  selectedConversationId: number
-  conversations: Conversation[]
+  conversationName: string
   messages: Message[]
   currentUserId: number
   onSendMessage: (message: string) => Promise<void>
@@ -40,8 +38,7 @@ function MessageListSkeleton() {
 }
 
 export function ChatWindow({
-  selectedConversationId,
-  conversations,
+  conversationName,
   messages,
   currentUserId,
   onSendMessage,
@@ -50,21 +47,11 @@ export function ChatWindow({
   sendError,
   onClearSendError,
 }: ChatWindowProps) {
-
-  const conversationName = useMemo(() => {
-    const selectedConversation = conversations.find(
-      (conversation) => conversation.id === selectedConversationId
-    )
-    return selectedConversation?.participants
-      .map((participant) => participant.user)
-      .join(', ')
-  }, [conversations, selectedConversationId])
-
   return (
     <div className="flex h-full flex-col">
       <header className="border-b border-border px-6 py-4 bg-background">
         <h1 className="flex items-center h-9 text-xl font-bold">
-          {conversationName || 'Chat Room'}
+          {conversationName}
         </h1>
       </header>
 
@@ -73,7 +60,6 @@ export function ChatWindow({
       ) : (
         <MessageList
           messages={messages}
-          conversationId={selectedConversationId}
           currentUserId={currentUserId}
         />
       )}
