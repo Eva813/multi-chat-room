@@ -31,7 +31,6 @@ export default function Home() {
   const sendMessage = useChatStore((state) => state.sendMessage)
   const clearSendError = useChatStore((state) => state.clearSendError)
 
-
   useEffect(() => {
     const initialize = async () => {
       await loadConversations()
@@ -40,7 +39,7 @@ export default function Home() {
     initialize()
   }, [loadConversations, selectConversation, selectedConversationId])
 
-  // 預先過濾當前對話的訊息
+  // 當前對話的訊息
   const conversationMessages = useMemo(
     () => messages.filter((m) => m.conversationId === selectedConversationId),
     [messages, selectedConversationId]

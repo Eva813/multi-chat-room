@@ -80,7 +80,7 @@ export const MessageBubble = React.memo(function MessageBubble({
 
         <MessageInteractive
           messageId={messageId}
-          reactions={reactions}
+          initialReactions={reactions}
           isOwn={isOwn}
         >
           <div

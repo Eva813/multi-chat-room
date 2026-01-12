@@ -125,6 +125,50 @@ export async function createMessage(
 }
 
 /**
+ * 更新訊息的 reaction
+ * @param messageId 訊息 ID (格式: "conversationId-timestamp")
+ * @param reactionType reaction 類型
+ * @param newValue 新的計數值
+ */
+export async function updateReaction(
+  messageId: string,
+  reactionType: 'like' | 'love' | 'laugh',
+  newValue: number
+): Promise<{ like: number; love: number; laugh: number }> {
+  try {
+    // 模擬網路延遲
+    await delay(300)
+
+    // 解析 messageId
+    const [conversationIdStr, timestampStr] = messageId.split('-')
+    const conversationId = parseInt(conversationIdStr)
+    const timestamp = parseInt(timestampStr)
+
+    // 找到對應的訊息
+    const messageIndex = mockMessages.findIndex(
+      msg => msg.conversationId === conversationId && msg.timestamp === timestamp
+    )
+
+    if (messageIndex === -1) {
+      throw new Error('Message not found')
+    }
+
+    // 模擬 10% 的錯誤率（用於測試回滾機制）
+    if (Math.random() < 0.1) {
+      throw new Error('Network error: Failed to update reaction')
+    }
+
+    // 更新 reaction
+    mockMessages[messageIndex].reactions[reactionType] = newValue
+
+    return mockMessages[messageIndex].reactions
+  } catch (error) {
+    console.error('Error updating reaction:', error)
+    throw error
+  }
+}
+
+/**
  * 重置模擬資料（回到初始狀態）
  */
 export function resetMockData() {

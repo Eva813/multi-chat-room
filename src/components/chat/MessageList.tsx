@@ -129,6 +129,7 @@ export function MessageList({
     }
   }, [])
 
+  // 根據訊息變化決定是否滾動
   useEffect(() => {
     const lastMessage = messages[messages.length - 1]
 
