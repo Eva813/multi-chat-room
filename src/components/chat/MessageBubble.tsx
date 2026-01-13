@@ -1,8 +1,10 @@
+'use client'
+
 import React from 'react'
-import Image from 'next/image'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { cn } from '@/lib/utils'
 import { MessageInteractive } from './MessageInteractive'
+import { MessageImage } from './MessageImage'
 
 interface MessageBubbleProps {
   content: string
@@ -33,6 +35,7 @@ export const MessageBubble = React.memo(function MessageBubble({
   messageId,
   imagePriority = false,
 }: MessageBubbleProps) {
+
   if (messageType === 'system') {
     return (
       <div className="flex justify-center my-2">
@@ -53,11 +56,15 @@ export const MessageBubble = React.memo(function MessageBubble({
     >
       {showAvatar ? (
         <Avatar className="h-8 w-8 mt-0.5">
-          <AvatarImage src={avatar} alt={sender} />
+          <AvatarImage
+            src={avatar}
+            alt={`${sender}的大頭貼`}
+          />
           <AvatarFallback>{sender?.[0] || 'U'}</AvatarFallback>
         </Avatar>
       ) : (
-        <div className="h-8 w-8" />
+        // 留位置避免版面跳動
+        <div className="h-8 w-8" aria-hidden="true" />
       )}
 
       <div className={cn('flex flex-col', isOwn ? 'items-end' : 'items-start')}>
@@ -86,24 +93,22 @@ export const MessageBubble = React.memo(function MessageBubble({
           <div
             className={cn(
               'max-w-md rounded-2xl',
-              messageType === 'image' ? 'p-1' : 'px-4 py-2.5',
-              isOwn
-                ? 'bg-message-own text-message-own-foreground'
-                : 'bg-message-other text-message-other-foreground'
+              messageType === 'image'
+                ? 'p-1'
+                : [
+                  'px-4 py-2.5',
+                  isOwn
+                    ? 'bg-message-own text-message-own-foreground'
+                    : 'bg-message-other text-message-other-foreground'
+                ]
             )}
           >
             {messageType === 'image' ? (
-              <div className="relative max-w-xs">
-                <Image
-                  src={content}
-                  alt="Message image"
-                  width={384}
-                  height={384}
-                  className="rounded-lg object-cover"
-                  priority={imagePriority}
-                  unoptimized={content.startsWith('blob:') || content.startsWith('data:')}
-                />
-              </div>
+              <MessageImage
+                src={content}
+                alt={`${sender || '使用者'}分享的圖片`}
+                priority={imagePriority}
+              />
             ) : (
               <p className="text-sm">{content}</p>
             )}

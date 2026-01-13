@@ -40,6 +40,10 @@ export default function Home() {
     selectConversation(id)
   }, [selectConversation])
 
+  const handleSendMessage = useCallback(async (content: string, type: 'text' | 'image' = 'text') => {
+    await sendMessage(content, type)
+  }, [sendMessage])
+
   // 當前對話的訊息
   const conversationMessages = useMemo(
     () => messages.filter((m) => m.conversationId === selectedConversationId),
@@ -115,7 +119,7 @@ export default function Home() {
         conversationName={conversationName}
         messages={conversationMessages}
         currentUserId={CURRENT_USER.userId}
-        onSendMessage={sendMessage}
+        onSendMessage={handleSendMessage}
         isLoading={isMessagesLoading}
         isSwitchingConversation={isSwitchingConversation}
         isSending={isSending}

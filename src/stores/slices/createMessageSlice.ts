@@ -52,7 +52,6 @@ export const createMessageSlice: SliceCreator<MessageSlice> = (set, get) => ({
       // 有訊息時使用切換狀態，保持舊訊息可見
       set({ isSwitchingConversation: true })
     } else {
-      // 初次載入時使用載入狀態，顯示骨架
       set({ isMessagesLoading: true })
     }
 
@@ -95,7 +94,7 @@ export const createMessageSlice: SliceCreator<MessageSlice> = (set, get) => ({
   /**
    * 發送新訊息
    */
-  sendMessage: async (content: string) => {
+  sendMessage: async (content: string, messageType: 'text' | 'image' = 'text') => {
     if (!content.trim()) return
 
     const { selectedConversationId, messages, persistedMessages } = get()
@@ -106,7 +105,7 @@ export const createMessageSlice: SliceCreator<MessageSlice> = (set, get) => ({
       const newMessage = await createMessage(selectedConversationId, {
         userId: 6,
         message: content,
-        messageType: 'text',
+        messageType: messageType,
         user: 'Me',
         avatar: 'https://i.pravatar.cc/150?img=6',
       })
@@ -117,9 +116,10 @@ export const createMessageSlice: SliceCreator<MessageSlice> = (set, get) => ({
       })
 
       // 更新對話列表的最後訊息
+      const lastMessageDisplay = messageType === 'image' ? '[圖片]' : content
       get().updateConversationTimestamp(
         selectedConversationId,
-        content,
+        lastMessageDisplay,
         newMessage.timestamp
       )
     } catch (error) {

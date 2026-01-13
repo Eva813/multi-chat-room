@@ -9,7 +9,7 @@ interface ChatWindowProps {
   conversationName: string
   messages: Message[]
   currentUserId: number
-  onSendMessage: (message: string) => Promise<void>
+  onSendMessage: (content: string, type?: 'text' | 'image') => Promise<void>
   isLoading?: boolean
   isSwitchingConversation?: boolean
   isSending?: boolean

@@ -59,7 +59,7 @@ export interface MessageSlice {
 
   // Actions - 訊息相關
   loadMessages: (conversationId: number) => Promise<void>
-  sendMessage: (content: string) => Promise<void>
+  sendMessage: (content: string, messageType?: 'text' | 'image') => Promise<void>
   clearSendError: () => void
 
   // Actions - Reaction 相關
