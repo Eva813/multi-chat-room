@@ -138,14 +138,15 @@ export const createMessageSlice: SliceCreator<MessageSlice> = (set, get) => ({
   clearSendError: () => set({ sendError: undefined }),
 
   /**
-   * 切換 reaction（樂觀更新 + 錯誤回滾）
+   * 切換 reaction
    */
   toggleReaction: async (messageId: MessageId, type: ReactionType) => {
     const { reactions, pendingReactions } = get()
 
-    // 防止重複操作
-    if (pendingReactions[messageId]) {
-      console.warn('[MessageSlice] Reaction operation already in progress for', messageId)
+    // 使用 messageId-type 組合作為 key 防止重複操作
+    const pendingKey = `${messageId}-${type}`
+    if (pendingReactions[pendingKey]) {
+      console.warn('[MessageSlice] Reaction operation already in progress:', { messageId, type })
       return
     }
 
@@ -166,7 +167,7 @@ export const createMessageSlice: SliceCreator<MessageSlice> = (set, get) => ({
       },
       pendingReactions: {
         ...pendingReactions,
-        [messageId]: { type, previousValue, timestamp: Date.now() },
+        [pendingKey]: { type, previousValue, timestamp: Date.now() },
       },
     })
 
@@ -180,11 +181,18 @@ export const createMessageSlice: SliceCreator<MessageSlice> = (set, get) => ({
           ...state.reactions,
           [messageId]: updatedReactions,
         },
-        pendingReactions: omit(state.pendingReactions, messageId),
+        pendingReactions: omit(state.pendingReactions, pendingKey),
       }))
     } catch (error) {
       console.error('[MessageSlice] Reaction update failed:', error)
 
+      const { reactionTimeouts } = get()
+      const errorKey = `${messageId}-error`
+      if (reactionTimeouts[errorKey]) {
+        clearTimeout(reactionTimeouts[errorKey])
+      }
+
+      // 回滾到原始狀態並清除 pending 
       set((state) => ({
         reactions: {
           ...state.reactions,
@@ -193,29 +201,23 @@ export const createMessageSlice: SliceCreator<MessageSlice> = (set, get) => ({
             [type]: previousValue,
           },
         },
-        pendingReactions: omit(state.pendingReactions, messageId),
+        pendingReactions: omit(state.pendingReactions, pendingKey),
         reactionErrors: {
           ...state.reactionErrors,
           [messageId]: 'Failed to update reaction',
         },
       }))
 
-      // 清除舊的 timeout
-      const { reactionTimeouts } = get()
-      if (reactionTimeouts[messageId]) {
-        clearTimeout(reactionTimeouts[messageId])
-      }
-
       // 3 秒後清除錯誤訊息
       const timeoutId = setTimeout(() => {
         get().clearReactionError(messageId)
       }, 3000)
 
-      // 保存 timeout ID
+      // 保存 timeout ID 供後續清理
       set((state) => ({
         reactionTimeouts: {
           ...state.reactionTimeouts,
-          [messageId]: timeoutId,
+          [errorKey]: timeoutId,
         },
       }))
     }
@@ -226,13 +228,15 @@ export const createMessageSlice: SliceCreator<MessageSlice> = (set, get) => ({
    */
   clearReactionError: (messageId: MessageId) => {
     const { reactionTimeouts } = get()
-    if (reactionTimeouts[messageId]) {
-      clearTimeout(reactionTimeouts[messageId])
+    const errorKey = `${messageId}-error`
+
+    if (reactionTimeouts[errorKey]) {
+      clearTimeout(reactionTimeouts[errorKey])
     }
 
     set((state) => ({
       reactionErrors: omit(state.reactionErrors, messageId),
-      reactionTimeouts: omit(state.reactionTimeouts, messageId),
+      reactionTimeouts: omit(state.reactionTimeouts, errorKey),
     }))
   },
 })
