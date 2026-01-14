@@ -57,6 +57,16 @@ export interface MessageSlice {
   reactionErrors: Record<string, string>
   reactionTimeouts: Record<string, NodeJS.Timeout>
 
+  // State - 輪詢相關
+  isPolling: boolean
+  pollingError?: string
+  lastPollTimestamp: number
+  pollRetryCount: number
+
+  // State - 未讀追蹤
+  unreadCount: number
+  hasUnreadMessages: boolean
+
   // Actions - 訊息相關
   loadMessages: (conversationId: number) => Promise<void>
   sendMessage: (content: string, messageType?: 'text' | 'image') => Promise<void>
@@ -65,6 +75,15 @@ export interface MessageSlice {
   // Actions - Reaction 相關
   toggleReaction: (messageId: MessageId, type: ReactionType) => Promise<void>
   clearReactionError: (messageId: MessageId) => void
+
+  // Actions - 輪詢相關
+  startPolling: () => void
+  stopPolling: () => void
+  pollForUpdates: () => Promise<void>
+
+  // Actions - 未讀追蹤
+  incrementUnreadCount: () => void
+  clearUnreadCount: () => void
 }
 
 export type StoreState = ConversationSlice & MessageSlice

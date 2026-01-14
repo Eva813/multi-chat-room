@@ -49,9 +49,22 @@ export const createConversationSlice: SliceCreator<ConversationSlice> = (set, ge
 
     if (currentId === id && messages.length > 0) return
 
+    // 切換前停止輪詢
+    get().stopPolling()
+
+    // 清除未讀數量
+    get().clearUnreadCount()
+
+    // ✅ 重置新對話的 reveal 計數（讓輪詢從頭開始）
+    const { resetRevealCount } = await import('@/apis/conversation')
+    resetRevealCount(id)
+
     const loadPromise = get().loadMessages(id)
     set({ selectedConversationId: id })
     await loadPromise
+
+    // 為新對話開始輪詢
+    get().startPolling()
   },
 
   updateConversationTimestamp: (id: number, lastMessage: string, timestamp: number) => {

@@ -11,6 +11,12 @@ const typedChatData = chatData as ChatData
 let mockMessages: Message[] = [...typedChatData.messages]
 let mockConversations: Conversation[] = [...typedChatData.conversations]
 
+// 追蹤每個訊息的反應最後更新時間
+let mockReactionUpdateLog: Record<string, number> = {}
+
+// 追蹤每個對話已經 reveal 的訊息數量
+let revealedMessageCount: Record<number, number> = {}
+
 /**
  * 取得所有對話列表
  */
@@ -111,7 +117,7 @@ export async function createMessage(
     }
 
     // 儲存到記憶體中
-    mockMessages.push(newMessage)
+    // mockMessages.push(newMessage)
 
     // 更新對話的最後訊息
     conversation.lastMessage = message.message
@@ -161,10 +167,125 @@ export async function updateReaction(
     // 更新 reaction
     mockMessages[messageIndex].reactions[reactionType] = newValue
 
+    // 記錄更新時間戳
+    mockReactionUpdateLog[messageId] = Date.now()
+
     return mockMessages[messageIndex].reactions
   } catch (error) {
     console.error('Error updating reaction:', error)
     throw error
+  }
+}
+
+/**
+ * 長輪詢：取得訊息和反應更新（延遲 reveal 模式）
+ * @param conversationId 對話 ID
+ * @param sinceTimestamp 上次輪詢的時間戳
+ * @param timeout 長輪詢逾時（毫秒）
+ */
+export async function getMessagesUpdates(
+  conversationId: number,
+  sinceTimestamp: number,
+  timeout: number = 25000
+): Promise<{
+  newMessages: Message[]
+  updatedReactions: Record<string, { like: number; love: number; laugh: number }>
+}> {
+  const startTime = Date.now()
+  const checkInterval = 3000 // 每 3 秒檢查一次
+
+  // 初始化：記錄該對話已經 reveal 的訊息數量
+  if (revealedMessageCount[conversationId] === undefined) {
+    // 初次進入，設為 3（loadMessages 已載入前 3 則）
+    revealedMessageCount[conversationId] = 3
+    console.log(`[Polling] 初始化對話 ${conversationId}，已 reveal 數量: 3`)
+  }
+
+  // 長輪詢循環
+  while (Date.now() - startTime < timeout) {
+    // 取得該對話的所有訊息（從 chatData）
+    const allConversationMessages = mockMessages
+      .filter(msg => msg.conversationId === conversationId)
+      .sort((a, b) => a.timestamp - b.timestamp)
+
+    const currentRevealCount = revealedMessageCount[conversationId]
+    const totalMessages = allConversationMessages.length
+
+    console.log(`[Polling] 對話 ${conversationId} - 已 reveal: ${currentRevealCount}, 總訊息: ${totalMessages}, sinceTimestamp: ${sinceTimestamp}`)
+
+    // 檢查是否還有未 reveal 的訊息
+    if (currentRevealCount < totalMessages) {
+      // 每次 reveal 1-2 則訊息
+      const revealAmount = Math.min(
+        Math.floor(Math.random() * 2) + 1,
+        totalMessages - currentRevealCount
+      )
+
+      const toReveal = allConversationMessages.slice(
+        currentRevealCount,
+        currentRevealCount + revealAmount
+      )
+
+      // 更新已 reveal 數量
+      revealedMessageCount[conversationId] += revealAmount
+
+      console.log(`[Polling] Revealing ${revealAmount} messages for conversation ${conversationId}`)
+
+      // 只返回 timestamp 大於 sinceTimestamp 的訊息
+      const newMessages = toReveal.filter(msg => msg.timestamp > sinceTimestamp)
+
+      console.log(`[Polling] 過濾後的新訊息數量: ${newMessages.length} (原始 reveal 數量: ${toReveal.length})`)
+
+      if (newMessages.length > 0) {
+        return {
+          newMessages,
+          updatedReactions: {}
+        }
+      } else {
+        console.log(`[Polling] 所有 revealed 訊息都被 timestamp 過濾掉了，繼續等待...`)
+      }
+    }
+
+    // 檢查反應更新（保留原邏輯）
+    const updatedReactions: Record<string, { like: number; love: number; laugh: number }> = {}
+
+    mockMessages
+      .filter(msg => msg.conversationId === conversationId)
+      .forEach(msg => {
+        const messageId = `${msg.conversationId}-${msg.timestamp}`
+        const lastUpdate = mockReactionUpdateLog[messageId]
+
+        if (lastUpdate && lastUpdate > sinceTimestamp) {
+          updatedReactions[messageId] = msg.reactions
+        }
+      })
+
+    if (Object.keys(updatedReactions).length > 0) {
+      return {
+        newMessages: [],
+        updatedReactions
+      }
+    }
+
+    // 沒有更新，等待後再檢查
+    await delay(checkInterval)
+  }
+
+  // 逾時，返回空結果
+  return {
+    newMessages: [],
+    updatedReactions: {}
+  }
+}
+
+/**
+ * 重置 reveal 計數（切換對話時使用）
+ */
+export function resetRevealCount(conversationId?: number) {
+  if (conversationId !== undefined) {
+    delete revealedMessageCount[conversationId]
+  } else {
+    revealedMessageCount = {}
   }
 }
 
@@ -174,4 +295,5 @@ export async function updateReaction(
 export function resetMockData() {
   mockMessages = [...typedChatData.messages]
   mockConversations = [...typedChatData.conversations]
+  mockReactionUpdateLog = {}
 }

@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useRef, useEffect, useState, useCallback } from 'react'
+import { useMemo, useRef, useEffect, useState, useCallback, forwardRef, useImperativeHandle } from 'react'
 import { ArrowDown } from 'lucide-react'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { MessageBubble } from './MessageBubble'
@@ -54,12 +54,18 @@ function determineScrollAction(
 interface MessageListProps {
   messages: Message[]
   currentUserId: number
+  onScrollPositionChange?: (isNearBottom: boolean) => void
 }
 
-export function MessageList({
+export interface MessageListRef {
+  scrollToBottom: () => void
+}
+
+export const MessageList = forwardRef<MessageListRef, MessageListProps>(function MessageList({
   messages,
   currentUserId,
-}: MessageListProps) {
+  onScrollPositionChange,
+}, ref) {
   const scrollViewportRef = useRef<HTMLDivElement>(null)
   const scrollRAFRef = useRef<number | null>(null)
   const lastMessageRef = useRef<string | null>(null)
@@ -92,6 +98,15 @@ export function MessageList({
     })
   }, [])
 
+  const scrollToBottomSmooth = useCallback(() => {
+    scrollToBottom(true)
+  }, [scrollToBottom])
+
+  // 暴露方法給父元件
+  useImperativeHandle(ref, () => ({
+    scrollToBottom: scrollToBottomSmooth
+  }), [scrollToBottomSmooth])
+
   const handleScrollToBottomClick = useCallback(() => {
     scrollToBottom(true)
   }, [scrollToBottom])
@@ -114,6 +129,9 @@ export function MessageList({
         setIsNearBottom(isNear)
         setShowScrollButton(!isNear)
 
+        // 通知父元件捲動位置變化
+        onScrollPositionChange?.(isNear)
+
         scrollRAFRef.current = null
       })
     }
@@ -127,7 +145,7 @@ export function MessageList({
         scrollRAFRef.current = null
       }
     }
-  }, [])
+  }, [onScrollPositionChange])
 
   // 根據訊息變化決定是否滾動
   useEffect(() => {
@@ -191,4 +209,4 @@ export function MessageList({
       )}
     </div>
   )
-}
+})

@@ -23,7 +23,7 @@ export const useChatStore = create<StoreState>()(
       }),
       {
         name: 'meep-chat-storage',
-        version: 1,
+        version: 2, // ✅ 從 1 改為 2，清理舊的髒資料
 
         // 只持久化必要的資料
         partialize: (state) => ({
@@ -43,3 +43,35 @@ export const useChatStore = create<StoreState>()(
 
 export type { MessageId, ReactionType, MessageReactions } from './types'
 export { REACTION_TYPES } from './types'
+
+/**
+ * 清除所有資料（開發用）
+ * 用於清除 localStorage 和重新載入頁面
+ */
+export const clearAllData = () => {
+  console.log('[clearAllData] 開始清除...')
+
+  // 1. 停止 polling
+  useChatStore.getState().stopPolling()
+  console.log('[clearAllData] polling 已停止')
+
+  // 2. 先設定 state 為空
+  useChatStore.setState({
+    persistedMessages: [],
+    reactions: {}
+  })
+  console.log('[clearAllData] state 已清空')
+
+  // 3. 清除 localStorage
+  localStorage.removeItem('meep-chat-storage')
+  console.log('[clearAllData] localStorage 已移除')
+
+  // 4. 確認清除
+  console.log('[clearAllData] 確認 localStorage:', localStorage.getItem('meep-chat-storage'))
+
+  // 5. 重新載入頁面
+  setTimeout(() => {
+    console.log('[clearAllData] 準備重新載入...')
+    window.location.reload()
+  }, 100)
+}

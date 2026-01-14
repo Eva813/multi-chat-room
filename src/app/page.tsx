@@ -1,11 +1,13 @@
 'use client'
 
-import { useEffect, useMemo, useCallback } from 'react'
+import { useEffect, useMemo, useCallback, useState, useRef } from 'react'
 import { ChatLayout } from '@/components/layout/ChatLayout'
 import { Sidebar } from '@/components/sidebar/Sidebar'
 import { ChatWindow } from '@/components/chat/ChatWindow'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useChatStore } from '@/stores/useChatStore'
+import { useVisibilityPolling } from '@/hooks/useVisibilityPolling'
+import type { MessageListRef } from '@/components/chat/MessageList'
 
 // 當前用戶（獨立於 chatData.json 中的用戶）
 const CURRENT_USER = {
@@ -26,11 +28,24 @@ export default function Home() {
   const isSending = useChatStore((state) => state.isSending)
   const sendError = useChatStore((state) => state.sendError)
 
+  // 未讀追蹤
+  const unreadCount = useChatStore((state) => state.unreadCount)
+  const hasUnreadMessages = useChatStore((state) => state.hasUnreadMessages)
+  const clearUnreadCount = useChatStore((state) => state.clearUnreadCount)
+  const incrementUnreadCount = useChatStore((state) => state.incrementUnreadCount)
+
   // 取得 actions
   const initialize = useChatStore((state) => state.initialize)
   const selectConversation = useChatStore((state) => state.selectConversation)
   const sendMessage = useChatStore((state) => state.sendMessage)
   const clearSendError = useChatStore((state) => state.clearSendError)
+
+  // 即時更新
+  useVisibilityPolling()
+
+  // 捲動管理
+  const [isNearBottom, setIsNearBottom] = useState(true)
+  const messageListRef = useRef<MessageListRef>(null)
 
   useEffect(() => {
     initialize()
@@ -44,11 +59,42 @@ export default function Home() {
     await sendMessage(content, type)
   }, [sendMessage])
 
+  // 捲動位置變化處理
+  const handleScrollPositionChange = useCallback((isNear: boolean) => {
+    setIsNearBottom(isNear)
+    if (isNear) {
+      clearUnreadCount()
+    }
+  }, [clearUnreadCount])
+
+  // 捲動到底部
+  const handleScrollToBottom = useCallback(() => {
+    messageListRef.current?.scrollToBottom()
+    clearUnreadCount()
+  }, [clearUnreadCount])
+
   // 當前對話的訊息
   const conversationMessages = useMemo(
     () => messages.filter((m) => m.conversationId === selectedConversationId),
     [messages, selectedConversationId]
   )
+
+  // 追蹤訊息數量變化以偵測未讀
+  const prevMessageCountRef = useRef(conversationMessages.length)
+
+  useEffect(() => {
+    const prevCount = prevMessageCountRef.current
+    const currentCount = conversationMessages.length
+
+    if (currentCount > prevCount && !isNearBottom) {
+      const newMessageCount = currentCount - prevCount
+      for (let i = 0; i < newMessageCount; i++) {
+        incrementUnreadCount()
+      }
+    }
+
+    prevMessageCountRef.current = currentCount
+  }, [conversationMessages.length, isNearBottom, incrementUnreadCount])
 
   // 預先計算當前對話名稱
   const conversationName = useMemo(() => {
@@ -125,6 +171,11 @@ export default function Home() {
         isSending={isSending}
         sendError={sendError}
         onClearSendError={clearSendError}
+        unreadCount={unreadCount}
+        hasUnreadMessages={hasUnreadMessages}
+        onScrollPositionChange={handleScrollPositionChange}
+        onScrollToBottom={handleScrollToBottom}
+        messageListRef={messageListRef}
       />
     </ChatLayout>
   )

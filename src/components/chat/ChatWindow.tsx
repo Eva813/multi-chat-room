@@ -1,7 +1,8 @@
 'use client'
 
-import { MessageList } from './MessageList'
+import { MessageList, type MessageListRef } from './MessageList'
 import { MessageInput } from './MessageInput'
+import { NewMessageIndicator } from './NewMessageIndicator'
 import { Message } from '@/lib/types'
 import { Skeleton } from '@/components/ui/skeleton'
 
@@ -15,6 +16,12 @@ interface ChatWindowProps {
   isSending?: boolean
   sendError?: string
   onClearSendError?: () => void
+  // 新增：未讀訊息相關
+  unreadCount?: number
+  hasUnreadMessages?: boolean
+  onScrollPositionChange?: (isNearBottom: boolean) => void
+  onScrollToBottom?: () => void
+  messageListRef?: React.RefObject<MessageListRef | null>
 }
 
 function MessageListSkeleton() {
@@ -48,6 +55,11 @@ export function ChatWindow({
   isSending = false,
   sendError,
   onClearSendError,
+  unreadCount = 0,
+  hasUnreadMessages = false,
+  onScrollPositionChange,
+  onScrollToBottom,
+  messageListRef,
 }: ChatWindowProps) {
   return (
     <div className="flex h-full flex-col">
@@ -60,11 +72,21 @@ export function ChatWindow({
       {(isLoading || isSwitchingConversation) ? (
         <MessageListSkeleton />
       ) : (
-        <div className="flex-1 min-h-0 flex flex-col transition-opacity duration-200">
+        <div className="flex-1 min-h-0 flex flex-col relative transition-opacity duration-200">
           <MessageList
+            ref={messageListRef}
             messages={messages}
             currentUserId={currentUserId}
+            onScrollPositionChange={onScrollPositionChange}
           />
+
+          {hasUnreadMessages && (
+            <NewMessageIndicator
+              count={unreadCount}
+              visible={hasUnreadMessages}
+              onScrollToNew={onScrollToBottom || (() => {})}
+            />
+          )}
         </div>
       )}
 
