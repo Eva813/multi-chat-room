@@ -11,6 +11,14 @@ interface ConversationListProps {
   onSelectConversation: (conversationId: number) => void
 }
 
+function EmptyState({ message }: { message: string }) {
+  return (
+    <div className="flex flex-col items-center justify-center h-full py-12 px-4 text-center">
+      <p className="text-sm text-muted-foreground">{message}</p>
+    </div>
+  )
+}
+
 export function ConversationList({
   conversations,
   selectedConversationId,
@@ -23,30 +31,34 @@ export function ConversationList({
 
   return (
     <ScrollArea className="flex-1 min-h-0">
-      <div className="space-y-1 p-2">
-        {sortedConversations.map((conversation) => {
-          // 對話名稱：其他參與者的名稱
-          const conversationName = conversation.participants
-            .map((p) => p.user)
-            .join(', ')
+      {sortedConversations.length === 0 ? (
+        <EmptyState message="No conversations found" />
+      ) : (
+        <div className="space-y-1 p-2">
+          {sortedConversations.map((conversation) => {
+            // 對話名稱：其他參與者的名稱
+            const conversationName = conversation.participants
+              .map((p) => p.user)
+              .join(', ')
 
-          return (
-            <ConversationItem
-              key={conversation.id}
-              name={conversationName}
-              lastMessage={conversation.lastMessage}
-              timestamp={new Date(conversation.timestamp).toLocaleTimeString(
-                'zh-TW',
-                { hour: '2-digit', minute: '2-digit' }
-              )}
-              avatars={conversation.participants.map((p) => p.avatar)}
-              names={conversation.participants.map((p) => p.user)}
-              isActive={conversation.id === selectedConversationId}
-              onClick={() => onSelectConversation(conversation.id)}
-            />
-          )
-        })}
-      </div>
+            return (
+              <ConversationItem
+                key={conversation.id}
+                name={conversationName}
+                lastMessage={conversation.lastMessage}
+                timestamp={new Date(conversation.timestamp).toLocaleTimeString(
+                  'zh-TW',
+                  { hour: '2-digit', minute: '2-digit' }
+                )}
+                avatars={conversation.participants.map((p) => p.avatar)}
+                names={conversation.participants.map((p) => p.user)}
+                isActive={conversation.id === selectedConversationId}
+                onClick={() => onSelectConversation(conversation.id)}
+              />
+            )
+          })}
+        </div>
+      )}
     </ScrollArea>
   )
 }

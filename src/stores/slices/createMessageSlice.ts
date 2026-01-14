@@ -10,6 +10,7 @@ import type { SliceCreator, MessageSlice, MessageId, ReactionType } from './type
 import { getMessages, createMessage } from '@/apis/conversation'
 import { updateReaction } from '@/apis/conversation'
 import { generateMessageId } from '../utils/messageId'
+import { omit } from '@/lib/utils'
 
 const initialState = {
   // 訊息相關
@@ -24,17 +25,6 @@ const initialState = {
   pendingReactions: {},
   reactionErrors: {},
   reactionTimeouts: {},
-}
-
-/**
- * 從物件中移除指定的 key
- */
-function omit<T extends Record<string, unknown>, K extends keyof T>(
-  obj: T,
-  key: K
-): Omit<T, K> {
-  const { [key]: _, ...rest } = obj
-  return rest as Omit<T, K>
 }
 
 export const createMessageSlice: SliceCreator<MessageSlice> = (set, get) => ({
